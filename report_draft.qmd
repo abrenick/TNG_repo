@@ -26,7 +26,13 @@ You can add options to executable code like this
 The `echo: false` option disables the printing of code (only output is displayed).
 
 ```{r}
+library(ggplot2)
+library(plotly)
 
-plot(rnorm(100), rnorm(100, 2))
+df <- data.frame(x = rnorm(100), y =rnorm(100, 2))
+p <- ggplot(data  = df, aes(x=x, y=y))+
+              geom_point()
+
+ggplotly(p)
 
 ```
