@@ -12,14 +12,76 @@ Quarto enables you to weave together content and executable code into a finished
 #Read Data
 
 ```{r}
+install.packages("corrplot")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(psych)
+library(gtsummary)
+library(polycor)
+library(corrplot)
+
+dat <- read.csv("combined_data_16jul2024.csv")
+```
+
+#sense of data
+
+```{r}
+
+dat %>% 
+  dplyr::select(contains("policies_inc"))
+
+
+# fix the -99s and -90s (make them NA)
+policies_inc <- dat %>% 
+  dplyr::select(contains("policies_inc")) 
+
+policies_inc[, 1:6] <- apply(policies_inc[, 1:6], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+
+
+# remove item 4 (attention check)
+
+#policies_inc <- policies_inc %>% select(-policies_inc_4)
+
+
+policies_inc %>%
+  tbl_summary()
+```
+
+```{r}
+
+###not showing cor mat
+
+cor.mat <- hetcor(policies_inc, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+print(cor.mat)
+print(cor.mat.cor)
+```
+
+```{r}
+KMO(cor.mat.cor)
+```
+
+```{r}
+
+#Inclusive policies alpha = 0.90
+policies_inc %>% 
+  psych::alpha()
+```
+
+```{r}
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 610)
+
+fa.parallel(cor.mat.cor, fa="pc", n.obs = 610)
 
 ```
 
-You can add options to executable code like this
-
 ```{r}
-#| echo: false
-2 * 2
+
 ```
 
 The `echo: false` option disables the printing of code (only output is displayed).
