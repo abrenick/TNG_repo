@@ -1,0 +1,123 @@
+---
+title: "Mental Health Scales"
+author: "Alaina"
+format: html
+editor: visual
+---
+
+## Mental Health Scales - TNG 
+
+```{r}
+install.packages("corrplot")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(psych)
+library(gtsummary)
+library(polycor)
+library(corrplot)
+
+dat <- read.csv("combined_data_16jul2024.csv")
+```
+
+```{r}
+dat %>% dplyr::select(contains("anxiety"))
+
+
+# fix the -99s (make them NA)
+anxiety <- dat %>% dplyr::select(contains("anxiety")) 
+
+anxiety[, 1:5] <- apply(anxiety[, 1:5], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+
+
+anxiety %>%
+  tbl_summary()
+
+```
+
+```{r}
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+#correlation matrix
+
+
+cor.mat <- hetcor(anxiety, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+#KMO test
+
+KMO(cor.mat.cor)
+```
+
+```{r}
+#Anxiety Scale Reliability alpha = 0.95
+anxiety %>% 
+  psych::alpha()
+
+```
+
+```{r}
+#Efa UNSURE WHY IT SAYS 3 factors
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 590)
+```
+
+```{r}
+#Anxiety Factor analysis 1 factor 
+fa1 <- fa(cor.mat.cor, n.obs = 590,
+          nfactors = 1) # run factor analysis model
+fa1 # look at output
+```
+
+```{r}
+dat %>% dplyr::select(contains("depress"))
+
+
+# fix the -99s (make them NA)
+depress <- dat %>% dplyr::select(contains("depress")) 
+
+depress[, 1:5] <- apply(depress[, 1:5], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+
+
+depress %>%
+  tbl_summary()
+```
+
+```{r}
+#depression correlation matrix
+
+
+cor.mat <- hetcor(depress, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+#KMO test
+
+KMO(cor.mat.cor)
+```
+
+```{r}
+#Depression Scale Reliability alpha = 0.91
+depress %>% 
+  psych::alpha()
+```
+
+```{r}
+#Efa UNSURE WHY IT SAYS 3 factors
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 590)
+```
+
+```{r}
+#Depression Factor analysis 1 factor 
+fa1 <- fa(cor.mat.cor, n.obs = 590,
+          nfactors = 1) # run factor analysis model
+fa1 # look at output
+```
