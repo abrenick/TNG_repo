@@ -81,7 +81,11 @@ fa.parallel(cor.mat.cor, fa="pc", n.obs = 610)
 ```
 
 ```{r}
+fa1 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 1) # run factor analysis model
+fa1 # look at output
 
+fa1 # look at output
 ```
 
 The `echo: false` option disables the printing of code (only output is displayed).
