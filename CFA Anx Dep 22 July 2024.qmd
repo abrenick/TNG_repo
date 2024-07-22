@@ -1,0 +1,67 @@
+---
+title: "CFA Anxiety & Depression"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## CFA
+
+```{r}
+library(dplyr)
+library(psych)
+library(lavaan)
+library(lavaanPlot)
+library(stringr)
+library(sjPlot)
+library(polycor)
+
+dat <- read.csv("combined_data.csv")
+
+anxiety <- dat %>% dplyr::select(contains("anxiety")) 
+
+anxiety <- apply(anxiety, MARGIN = 2, 
+                              function(x) ifelse(x==-99, NA, x) %>% as.character)
+
+```
+
+#### Check correlation
+
+```{r}
+
+anx_cor <- hetcor(anxiety, "Polychoric")
+
+```
+
+### CFA
+
+<https://lavaan.ugent.be/tutorial/cfa.html>
+
+<https://stats.oarc.ucla.edu/r/seminars/rcfa/>
+
+```{r}
+
+model <-
+  'Anx_lat =~ anxiety_1 + anxiety_2 + anxiety_3 +
+              anxiety_4 + anxiety_5 + anxiety_6 + anxiety_7 +
+              anxiety_8'
+
+
+anx.cfa <- cfa(model, anxiety,std.lv = TRUE, 
+               ordered = c("anxiety_1",
+                           "anxiety_2",
+                           "anxiety_3",
+                           "anxiety_4",
+                           "anxiety_5",
+                           "anxiety_6",
+                           "anxiety_7",
+                           "anxiety_8"))
+summary(anx.cfa, fit.measures = TRUE)
+
+
+lavaanPlot(anx.cfa, coefs = TRUE, sig = 0.05, 
+           covs = TRUE, stars = "latent", stand = TRUE)
+  
+
+```
