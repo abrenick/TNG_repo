@@ -1,0 +1,130 @@
+---
+title: "Victimization EFA 23july2024"
+author: "alaina"
+format: html
+editor: visual
+---
+
+# Victimization Scale TNG
+
+```{r}
+install.packages("corrplot")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(psych)
+library(gtsummary)
+library(polycor)
+library(corrplot)
+
+dat <- read.csv("combined_data.csv")
+```
+
+```{r}
+dat %>% dplyr::select(contains("victimization"))
+
+
+# fix the -99s (make them NA)
+victimization <- dat %>% dplyr::select(contains("victimization")) 
+
+victimization[, 1:9] <- apply(victimization[, 1:9], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+victimization[, 1:9] <- apply(victimization[, 1:9], 2, 
+                              function(x) ifelse(x==-90, NA, x))
+
+# remove item 4 (attention check)
+
+#policies_disc <- policies_disc %>% select(-policies_disc_4)
+
+
+victimization %>%
+  tbl_summary()
+```
+
+```{r}
+cor.mat <- hetcor(victimization, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+print(cor.mat.cor)
+
+```
+
+```{r}
+KMO(cor.mat.cor)
+```
+
+```{r}
+victimization %>% 
+  alpha()
+```
+
+```{r}
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 610)
+```
+
+```{r}
+fa1 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 4) # run factor analysis model
+fa1 # look at output
+```
+
+Items:
+
+MR1: vic \_ mis 3 & 4 = students deadnaming and misgendering
+
+MR4: vic \_mis 1 & 2 = adults in school deadnaming and misgendering
+
+MR2: vic \_out 1 & 2 = forced outting by teachers and peers
+
+MR3: vic \_ind 1, 2, 3 = othered, tokenized, fetishized
+
+```{r}
+fa2 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 3, rotate="oblimin") # run factor analysis model
+rotated_loadings <- fa2$fa.rotation$loadings
+fa2 # look at output
+print("rotated_loadings")
+
+```
+
+3 factor model:
+
+MR1: vic \_ mis 1, 2, 3, & 4 = students deadnaming and misgendering
+
+MR2: vic \_out 1 & 2 = forced outting by teachers and peers
+
+MR3: vic \_ind 1, 2, 3 = othered, tokenized, fetishized
+
+```{r}
+# Install and load the GPArotation package if not already installed
+if (!require("GPArotation")) install.packages("GPArotation")
+library(GPArotation)
+
+# Assuming you have your data in a data frame named 'data'
+# and you've already performed factor analysis (e.g., using 'fa' from psych)
+fa1 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 4) # run factor analysis model
+fa1 # look at output
+
+
+fa <- fa(cor.mat.cor, n.obs = 610, nfactors = 4, rotate="oblimin") 
+fa
+
+fa3 <- fa(cor.mat.cor, n.obs = 610, nfactors = 3, rotate="oblimin") 
+rotated_loadings <- fa$fa.rotation$loadings
+print(rotated_loadings)
+
+# Specify the number of factors to rotate (replace 2 with your desired number)
+nfactors <- 3
+
+# Extract the factor loadings matrix
+loadings <- fa1$loadings[, 1:nfactors=4]  # Adjust the indices if needed
+
+# Perform oblimin rotation with default parameters (delta=0 for quartimin rotation)
+rotated_loadings <- oblimin(loadings)
+
+# The 'rotated_loadings' matrix now contains the oblimin rotated factor loadings
+
+```
