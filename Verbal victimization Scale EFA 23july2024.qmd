@@ -1,0 +1,72 @@
+---
+title: "victimization slurs efa 23jul2024"
+format: html
+editor: visual
+---
+
+```{r}
+install.packages("corrplot")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(psych)
+library(gtsummary)
+library(polycor)
+library(corrplot)
+
+dat <- read.csv("combined_data.csv")
+```
+
+```{r}
+dat %>% dplyr::select(contains("verbal"))
+
+
+# fix the -99s (make them NA)
+verbal_vic <- dat %>% dplyr::select(contains("verbal")) 
+
+verbal_vic[, 1:3] <- apply(verbal_vic[, 1:3], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+verbal_vic[, 1:3] <- apply(verbal_vic[, 1:3], 2, 
+                              function(x) ifelse(x==-90, NA, x))
+
+# remove item 4 (attention check)
+
+#policies_disc <- policies_disc %>% select(-policies_disc_4)
+
+
+verbal_vic %>%
+  tbl_summary()
+```
+
+```{r}
+cor.mat <- hetcor(verbal_vic, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+print(cor.mat.cor)
+```
+
+```{r}
+KMO(cor.mat.cor)
+```
+
+```{r}
+verbal_vic %>% 
+  alpha()
+```
+
+```{r}
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 610)
+```
+
+```{r}
+fa1 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 1) # run factor analysis model
+fa1 # look at output
+```
+
+```{r}
+verbal_vic %>% select(verbal_vic_1, verbal_vic_2, verbal_vic_3) %>%
+  alpha()
+```
