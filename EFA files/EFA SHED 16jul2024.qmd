@@ -1,0 +1,211 @@
+---
+title: "EFA 16jul2024 AB"
+author: "Alaina"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+#install.packages("naniar")
+naniar::replace_with_na(-99, 99, 98, -90)
+```
+
+Get sense of data
+
+```{r}
+dat <- read.csv("combined_data.csv")
+dat %>% dplyr::select(contains("Gender_in"))
+
+
+# fix the -99s (make them NA)
+Gender_in <- dat %>% dplyr::select(contains("Gender_in")) 
+
+Gender_in[, 1:10] <- apply(Gender_in[, 1:10], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+
+
+# remove item 4 (attention check)
+
+##policies_disc <- policies_disc %>% select(-policies_disc_4)
+
+
+Gender_in %>%
+  tbl_summary()
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+Run the corr matrix![]()
+
+```{r}
+###not running - adjusted to make it positive-definite
+library(polycor)
+cor.mat <- hetcor(Gender_in, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+```
+
+KMO test
+
+```{r}
+
+KMO(cor.mat.cor)
+```
+
+Naive reliability
+
+```{r}
+Gender_in %>% 
+  psych::alpha(check.keys=TRUE)
+
+Gender_in$gender_in_health_ed_5r <-
+                reverse.code(Gender_in$gender_in_health_ed_5, 
+                             keys = -1) %>% as.numeric()
+Gender_in$gender_in_health_ed_8r <-
+                reverse.code(Gender_in$gender_in_health_ed_8, 
+                             keys = -1) %>% as.numeric()
+Gender_in$gender_in_health_ed_10r <-
+                reverse.code(Gender_in$gender_in_health_ed_10, 
+                             keys = -1) %>% as.numeric()
+
+Gender_in %>% select(c(-gender_in_health_ed_5, 
+                     -gender_in_health_ed_8, 
+                     -gender_in_health_ed_10)) %>%
+  psych::alpha(check.keys=TRUE)
+
+
+# rerun correlation matrix with reverse coded items
+cor.mat <- hetcor(Gender_in %>% select(c(-gender_in_health_ed_5, 
+                     -gender_in_health_ed_8, 
+                     -gender_in_health_ed_10)), use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+###not sure why this is an error
+```
+
+Factor Analysis
+
+```{r}
+##I believe i am deleted gender_in items 1 and 2 and leaving in 11th and 12th lines which are 1r and 2r
+fa.parallel(cor.mat.cor[, ], fa="fa", n.obs = 610)
+
+
+
+```
+
+```{r}
+fa1 <- fa(cor.mat.cor[c(-10),c(-10)], n.obs = 610,
+          nfactors = 3) # run factor analysis model
+fa1 # look at output
+
+# fa1.c <- fa(cor.mat.cor[c(-10),c(-10)], n.obs = 610,
+#           nfactors = 4) # run factor analysis model
+
+
+
+
+```
+
+1, 2, 5r, 8r = shed_exc
+
+3, 4, 9 = shed_vic
+
+6, 7 = shed_mis
+
+10r = shed_dis
+
+#### Create item scales
+
+```{r}
+
+Gender_in$shed_exc <- (Gender_in$gender_in_health_ed_1+
+                      Gender_in$gender_in_health_ed_2+
+                      Gender_in$gender_in_health_ed_5r+
+                      Gender_in$gender_in_health_ed_8r)/4
+
+Gender_in$shed_vic <- (Gender_in$gender_in_health_ed_3+
+                      Gender_in$gender_in_health_ed_4+
+                      Gender_in$gender_in_health_ed_9)/3
+
+Gender_in$shed_mis <- (Gender_in$gender_in_health_ed_6+
+                      Gender_in$gender_in_health_ed_7)/2
+
+Gender_in$shed_dis <- Gender_in$gender_in_health_ed_10r
+
+#save file
+#write.csv(Gender_in, "data/Gender_in_scales.csv", row.names = FALSE)
+
+# example of adding to full dataframe
+full$shed_mis <- Gender_in$shed_mis
+```
+
+```{r}
+fa2 <- fa(cor.mat.cor[c(-1,-2), c(-1,-2)], n.obs = 610,
+          nfactors = 3) # run factor analysis model
+fa2 # look at output
+```
+
+1r, 2r, 5, 8
+
+3, 4, 9
+
+6, 7
+
+\(10\)
+
+```{r}
+fa3 <- fa(cor.mat.cor[c(-1,-2,-10), c(-1,-2,-10)], n.obs = 610,
+          nfactors = 3) # run factor analysis model
+fa3 # look at output
+```
+
+1r, 2r, 5, 8
+
+3, 4, 9
+
+6, 7
+
+Check alpha of new SHED scale
+
+```{r}
+###trying to code scales for reliability, doesn't appear to be working
+#SHEDincl <- select c(gender_in_health_ed_1, gender_in_health_ed_2, gender_in_health_ed_5, gender_in_health_ed_8) #each number refers to the column
+#SHEDmisinf <- select(dat, 1, 3, 4, 5, 12, 16, 20, 21)
+#SHEDvic <- select(dat, 8, 11, 17)
+
+#scale reliablity SHED Inclusivity alpha = 0.75
+Gender_in %>% 
+  select(Gender_in_Health_Ed_1r, Gender_in_Health_Ed_2r, gender_in_health_ed_5, gender_in_health_ed_8) %>%
+  psych::alpha() 
+
+```
+
+```{r}
+#scale reliability SHED Victimization alpha = 0.84
+Gender_in %>% 
+  select(gender_in_health_ed_3, gender_in_health_ed_4, gender_in_health_ed_9) %>%
+  psych::alpha() 
+
+
+```
+
+```{r}
+#Scale reliability SHED misinformation alpha = 0.69
+
+Gender_in %>% 
+  select(gender_in_health_ed_6, gender_in_health_ed_7) %>%
+  psych::alpha()
+```

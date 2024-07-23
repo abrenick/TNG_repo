@@ -1,0 +1,122 @@
+---
+title: "Report_draft"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# EFA analysis
+
+Resources
+
+<https://rpubs.com/JBean/840128>
+
+<https://www.open-access.bcu.ac.uk/6076/1/__staff_shares_storage%20500mb_Library_ID112668_Stats%20Advisory_New%20Statistics%20Workshops_18ExploratoryFactorAnalysis_ExploratoryFactorAnalysis4.pdf>
+
+Here, we are going to read in the data, and load some packages
+
+```{r}
+install.packages("corrplot")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(psych)
+library(gtsummary)
+library(polycor)
+library(corrplot)
+
+dat <- read.csv("combined_data.csv")
+```
+
+First, lets get a sense of the data
+
+```{r}
+
+dat %>% dplyr::select(contains("policies_disc"))
+
+
+# fix the -99s (make them NA)
+policies_disc <- dat %>% dplyr::select(contains("policies_disc")) 
+
+policies_disc[, 1:8] <- apply(policies_disc[, 1:8], 2, 
+                              function(x) ifelse(x==-99, NA, x))
+
+
+# remove item 4 (attention check)
+
+policies_disc <- policies_disc %>% select(-policies_disc_4)
+
+
+policies_disc %>%
+  tbl_summary()
+
+
+
+```
+
+Next step is the correlation matrix
+
+```{r}
+
+
+cor.mat <- hetcor(policies_disc, use = "pairwise", 
+                  type = "Polychoric")
+
+cor.mat.cor <- cor.mat$correlations
+
+
+```
+
+KMO test want values between .8-1; values less that .6 indicate inadequate sampling
+
+```{r}
+KMO(cor.mat.cor)
+```
+
+Check naive reliability
+
+```{r}
+policies_disc %>% 
+  alpha()
+```
+
+Calculate number of factors
+
+```{r}
+
+
+fa.parallel(cor.mat.cor, fa="fa", n.obs = 610)
+```
+
+```{r}
+fa1 <- fa(cor.mat.cor, n.obs = 610,
+          nfactors = 3) # run factor analysis model
+fa1 # look at output
+
+
+
+```
+
+Policies_disc_5 shows cross loading (on MR1 and MR3), remove and rerun
+
+```{r}
+
+fa2 <- fa(cor.mat.cor[c(-4,-2), c(-4, -2)], n.obs = 610,
+          nfactors = 3) # run factor analysis model
+fa2 # look at output
+
+```
+
+Seems like we have a solution:
+
+1 factor with: 3, 6, & 8 can be considered a multi-factor
+
+Check alpha of new scale:
+
+```{r}
+
+policies_disc %>% select(policies_disc_3, policies_disc_6, policies_disc_8) %>%
+  alpha()
+
+```

@@ -1,0 +1,47 @@
+---
+title: "CFA depression ab 23jul2024"
+author: "alaina"
+format: html
+editor: visual
+---
+
+CFA
+
+```{r}
+library(dplyr) 
+library(psych) 
+library(lavaan) 
+library(lavaanPlot) 
+library(stringr) 
+library(sjPlot) 
+library(polycor)
+
+dat <- read.csv("combined_data[74113].csv")
+
+depression <- dat %>% dplyr::select(contains("depression"))
+
+depression <- apply(depression, MARGIN = 2, function(x) ifelse(x==-99, NA, x) %>%
+                      as.character)
+```
+
+Check correlation
+
+```{r}
+dep_cor <- hetcor(depression, "Polychoric")
+```
+
+CFA
+
+<https://lavaan.ugent.be/tutorial/cfa.html>
+
+<https://stats.oarc.ucla.edu/r/seminars/rcfa/>
+
+{r}
+
+```{r}
+model <- 'dep_lat =~ depression_1 + depression_2 + depression_3 + depression_4 + depression_5 + depression_6 + depression_7 + depression_8'
+
+dep.cfa <- cfa(model, depression,std.lv = TRUE, ordered = c("depression_1", "depression_2", "depression_3", "depression_4", "depression_5", "depression_6", "depression_7", "depression_8")) summary(dep.cfa, fit.measures = TRUE)
+
+lavaanPlot(dep.cfa, coefs = TRUE, sig = 0.05, covs = TRUE, stars = "latent", stand = TRUE)
+```
